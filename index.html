@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruit Weight Guesser</title>
+<style>
+body {
+    font-family: Helvetica, Arial, sans-serif; /* I like Helvetica, sue me */
+    line-height: 1.6;
+    margin: 15px;
+    background-color: #f5f5f5;
+}
+.mainBox { /* Not feeling 'container' today */
+    max-width: 850px;
+    margin: auto;
+    padding: 18px; /* Bit of a random number */
+    background-color: #fff;
+    border-radius: 7px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+h1 {
+    color: #333;
+    border-bottom: 1px solid #ccc;
+}
+h2 {
+    color: #2f4f4f; /* Dark slate, why not */
+    padding-bottom: 6px;
+    margin-top: 18px;
+}
+table {
+    border-collapse: collapse;
+    width: 95%; /* Close enough to full */
+    margin: 12px auto;
+}
+th, td {
+    border: 1px solid #bbb;
+    padding: 9px;
+    text-align: center;
+}
+th {
+    background-color: #e0e0e0;
+}
+.gameZone { /* Sounds cooler than game-container */
+    border: 2px solid #aaa;
+    padding: 18px;
+    margin: 10px 0;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+}
+.gameButtons button { /* Plural for buttons */
+    margin: 6px;
+    padding: 9px 15px;
+    font-size: 15px; /* Meh, looks fine */
+    border-radius: 4px;
+    background-color: #2e8b57; /* Forest green vibes */
+    color: white;
+    border: 1px solid #228b22;
+    cursor: pointer;
+}
+.gameButtons button:hover {
+    background-color: #228b22;
+}
+#resultBox {
+    margin-top: 12px;
+    font-weight: bold;
+    color: #333;
+}
+ul {
+    max-width: 580px;
+}
+.codeSnippet { /* More descriptive name */
+    background-color: #2f2f2f;
+    color: #eee;
+    padding: 12px;
+    border-radius: 6px;
+    margin: 18px 0;
+    position: relative;
+}
+.codeSnippet pre {
+    margin: 0;
+    font-family: Consolas, monospace; /* Consolas feels coder-y */
+    overflow-x: auto;
+}
+.copyBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: #555;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.copyBtn:hover {
+    background-color: #777;
+}
+#darkSwitch {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    padding: 7px;
+    background-color: #4a4a4a;
+    color: white;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.dark-mode {
+    background-color: #222;
+    color: #ccc;
+}
+.dark-mode .mainBox {
+    background-color: #333;
+}
+.dark-mode .gameZone, .dark-mode .codeSnippet {
+    background-color: #444;
+}
+@media (max-width: 600px) {
+    .gameButtons button {
+        display: block;
+        width: 85%;
+        margin: 7px auto;
+    }
+    .mainBox {
+        padding: 10px;
+    }
+}
+</style>
+</head>
+<body>
+<button id="darkSwitch" onclick="toggleDark()">Dark/Light Mode</button>
+<div class="mainBox">
+<h1>🍊 Fruit Weight Challenge</h1>
+<p>Yo, let's predict some fruit weights with linear regression. It's like guessing but with math!</p>
+
+<h2>Fruit Data Table</h2>
+<table>
+<tr>
+<th>Fruit</th>
+<th>Weight (g)</th>
+<th>Color (0=green,1=yellow,2=orange/red)</th>
+<th>Texture (0=smooth,1=rough)</th>
+</tr>
+<tr><td>🍎 Apple</td><td>150</td><td>2</td><td>0</td></tr>
+<tr><td>🍌 Banana</td><td>120</td><td>1</td><td>0</td></tr>
+<tr><td>🍊 Orange</td><td>160</td><td>2</td><td>1</td></tr>
+<tr><td>🍋 Lemon</td><td>140</td><td>1</td><td>1</td></tr>
+<tr><td>🍐 Pear</td><td>180</td><td>0</td><td>1</td></tr>
+<tr><td>🍎 Apple</td><td>160</td><td>0</td><td>0</td></tr>
+<tr><td>🍌 Banana</td><td>130</td><td>1</td><td>0</td></tr>
+</table>
+<p><a href="data:application/octet-stream,fruit,weight,color_score,texture_score%0Aapple,150,2,0%0Abanana,120,1,0%0Aorange,160,2,1%0Alemon,140,1,1%0Apear,180,0,1%0Aapple,160,0,0%0Abanana,130,1,0" download="fruit_data.csv">Download the data</a></p>
+
+<h2>Guess That Weight!</h2>
+<p>Can you guess the fruit's weight from its color and texture? Click Start and try it out.</p>
+<div id="gameContainer" class="gameZone">
+    <div id="gamePrompt">Press Start to play!</div>
+    <div id="gameInfo"></div>
+    <div id="gameGuess">
+        <label for="weightGuess">Guess the weight (g):</label>
+        <input type="number" id="weightGuess">
+        <button onclick="checkGuess()">Submit</button>
+    </div>
+    <div class="gameButtons">
+        <button id="startGameBtn" onclick="startGame()">Start</button>
+        <button onclick="resetGame()">Reset</button>
+    </div>
+</div>
+
+<hr>
+
+<h2>Colab Python Code</h2>
+<p>Here’s some Python to run in Google Colab. Copy these into cells and mess around!</p>
+
+<h3>1. Load Libraries</h3>
+<p>Just grabbing the stuff we need for data and plots.</p>
+<div class="codeSnippet">
+    <button class="copyBtn" onclick="copyCode('code1')">Copy</button>
+    <pre id="code1">import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+# Ready to roll!
+</pre>
+</div>
+
+<h3>2. Set Up Data</h3>
+<p>This is our fruit data. Weight’s the thing we’re predicting.</p>
+<div class="codeSnippet">
+    <button class="copyBtn" onclick="copyCode('code2')">Copy</button>
+    <pre id="code2">data = {
+    'fruit_name': ['apple', 'banana', 'orange', 'lemon', 'pear', 'apple', 'banana'],
+    'weight_g': [150, 120, 160, 140, 180, 160, 130],
+    'color': [2, 1, 2, 1, 0, 0, 1],
+    'texture': [0, 0, 1, 1, 1, 0, 0]
+}
+fruits = pd.DataFrame(data)
+print(fruits) # Quick look at the data
+</pre>
+</div>
+
+<h3>3. Train the Model</h3>
+<p>Predicting weight with linear regression. Scaling features because it’s a smart move.</p>
+<div class="codeSnippet">
+    <button class="copyBtn" onclick="copyCode('code3')">Copy</button>
+    <pre id="code3">X = fruits[['color', 'texture']]
+y = fruits['weight_g']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42) # 25% test split for kicks
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+my_model = LinearRegression() # Gave it a custom name
+my_model.fit(X_train_scaled, y_train)
+print("Model trained!") # Why not
+</pre>
+</div>
+
+<h3>4. Test and Visualize</h3>
+<p>Checking how we did with MSE and R², plus a plot to make it visual.</p>
+<div class="codeSnippet">
+    <button class="copyBtn" onclick="copyCode('code4')">Copy</button>
+    <pre id="code4">y_pred = my_model.predict(X_test_scaled)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"MSE: {mse:.2f} - Not too shabby!")
+print(f"R²: {r2:.2f} - How much variance we explaining?")
+
+plt.scatter(fruits['color'], fruits['weight_g'], c='blue', s=150) # Blue dots, why not
+plt.xlabel('Color Score')
+plt.ylabel('Weight (g)')
+plt.title('Fruit Weight Prediction')
+
+x_vals = fruits['color'].values.reshape(-1, 1)
+y_pred_line = my_model.predict(scaler.transform(fruits[['color', 'texture']]))
+plt.plot(x_vals, y_pred_line, color='orange', label='Fit Line') # Orange for fun
+plt.legend()
+plt.show()
+</pre>
+</div>
+
+<h3>5. Check Coefficients</h3>
+<p>Seeing how much each feature affects the weight prediction.</p>
+<div class="codeSnippet">
+    <button class="copyBtn" onclick="copyCode('code5')">Copy</button>
+    <pre id="code5">coefs = my_model.coef_
+features = ['color', 'texture']
+print("Feature impacts:")
+for f, c in zip(features, coefs):
+    print(f"{f}: {c:.2f}") # Short and sweet
+
+plt.bar(features, coefs, color='purple') # Purple bars, because why not
+plt.xlabel('Features')
+plt.ylabel('Coefficient')
+plt.title('How Features Affect Weight')
+plt.show()
+</pre>
+</div>
+
+<hr>
+<h2>🍋 Try These Out!</h2>
+<p>Play around with these to see how the model behaves:</p>
+<ul>
+<li>Guess a new fruit’s weight in Colab: try <code>my_model.predict(scaler.transform([[1, 0]]))</code>. What’s the weight for a yellow, smooth fruit?</li>
+<li>Add a sweetness score to the data (e.g., banana=8, lemon=3) in Step 2, update X in Step 3. Does it make the model better?</li>
+<li>Look at the coefficients in Step 5. What does a +2.5 for color mean in plain English?</li>
+<li>Why aren’t we predicting fruit type anymore? Talk it out with someone.</li>
+</ul>
+<p><strong>Pro Tip</strong>: Positive coefficients mean higher feature values increase weight. Negative means the opposite. Have fun!</p>
+</div>
+
+<script>
+const fruitData = [ // Changed name for variety
+    { weight: 150, color: 2, texture: 0 },
+    { weight: 120, color: 1, texture: 0 },
+    { weight: 160, color: 2, texture: 1 },
+    { weight: 140, color: 1, texture: 1 },
+    { weight: 180, color: 0, texture: 1 },
+    { weight: 160, color: 0, texture: 0 },
+    { weight: 130, color: 1, texture: 0 }
+];
+
+let currentFruit = null;
+
+const colors = { // Shortened name
+    0: "green",
+    1: "yellow",
+    2: "orange/red"
+};
+
+const textures = {
+    0: "smooth",
+    1: "rough"
+};
+
+function startGame() {
+    const idx = Math.floor(Math.random() * fruitData.length);
+    currentFruit = fruitData[idx];
+    console.log("Picked fruit:", currentFruit); // Debugging leftover
+    document.getElementById("gamePrompt").innerText = "Guess this fruit's weight!";
+    document.getElementById("gameInfo").innerHTML = `
+        <p>Color: ${colors[currentFruit.color]}</p>
+        <p>Texture: ${textures[currentFruit.texture]}</p>
+    `;
+    document.getElementById("gameGuess").style.display = "block";
+    document.getElementById("startGameBtn").innerText = "Next";
+}
+
+function checkGuess() {
+    const guess = document.getElementById("weightGuess").value;
+    if (!guess) {
+        alert("Gimme a number!");
+        return;
+    }
+    let msg = `Actual weight: ${currentFruit.weight}g. Your guess: ${guess}g.`;
+    document.getElementById("gameInfo").innerHTML = `
+        <p>Color: ${colors[currentFruit.color]}</p>
+        <p>Texture: ${textures[currentFruit.texture]}</p>
+        <div id="resultBox">${msg}</div>
+    `;
+    document.getElementById("gameGuess").style.display = "none";
+}
+
+function resetGame() {
+    currentFruit = null;
+    document.getElementById("gamePrompt").innerText = "Press Start to play!";
+    document.getElementById("gameInfo").innerHTML = "";
+    document.getElementById("gameGuess").style.display = "none";
+    document.getElementById("startGameBtn").innerText = "Start";
+    console.log("Game reset"); // Another debug log
+}
+
+function copyCode(id) {
+    const code = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(code)
+        .then(() => alert("Code copied!"))
+        .catch(() => alert("Copy failed, oops."));
+}
+
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    console.log("Toggled dark mode"); // Why not log it
+}
+</script>
+</body>
+</html>
